@@ -5,10 +5,14 @@ pub fn main() !void {
     defer arena.deinit();
     const alloc = arena.allocator();
 
-    // subject dir is: first argument or cwd
+    // get args and skip command
     var args = std.process.args();
     _ = args.skip();
-    const subject_dir = args.next() orelse try std.fs.cwd().realpathAlloc(alloc, ".");
 
-    std.log.info("{s}", .{subject_dir});
+    const dir_absolute_path = try std.fs.cwd().realpathAlloc(
+        alloc,
+        args.next() orelse ".",
+    );
+
+    std.log.info("{s}", .{dir_absolute_path});
 }
