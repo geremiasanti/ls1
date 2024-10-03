@@ -16,7 +16,7 @@ pub fn main() !void {
             std.log.info("cannot access '{s}': No such file or directory", .{dir_path});
             return;
         },
-        else => unreachable,
+        else => return err,
     };
 
     std.log.info("{s}", .{dir_absolute_path});
