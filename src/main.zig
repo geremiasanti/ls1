@@ -5,15 +5,10 @@ pub fn main() !void {
     defer arena.deinit();
     const alloc = arena.allocator();
 
-    // getting
+    // subject dir is: first argument or cwd
     var args = std.process.args();
     _ = args.skip();
-    const first_arg = args.next();
+    const subject_dir = args.next() orelse try std.fs.cwd().realpathAlloc(alloc, ".");
 
-    const dir = if (first_arg != null)
-        first_arg
-    else
-        try std.fs.cwd().realpathAlloc(alloc, ".");
-
-    std.log.info("{s}", .{dir});
+    std.log.info("{s}", .{subject_dir});
 }
