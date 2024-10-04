@@ -2,6 +2,15 @@ const std = @import("std");
 const Allocator = std.mem.Allocator;
 
 pub fn main() !void {
+    // get first argument
+    var args = std.process.args();
+    _ = args.skip();
+    const path = args.next() orelse ".";
+
+    try ls1(path);
+}
+
+fn ls1(path: []const u8) !void {
     // allocator
     var arena = std.heap.ArenaAllocator.init(std.heap.page_allocator);
     defer arena.deinit();
@@ -9,11 +18,6 @@ pub fn main() !void {
 
     // stout writer
     const stout_writer = std.io.getStdOut().writer();
-
-    // get first argument
-    var args = std.process.args();
-    _ = args.skip();
-    const path = args.next() orelse ".";
 
     // get stat file of path
     const cwd = std.fs.cwd();
