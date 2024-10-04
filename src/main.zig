@@ -8,19 +8,17 @@ pub fn main() !void {
     const path = args.next() orelse ".";
 
     // program
-    const out = try ls1(path);
+    var arena = std.heap.ArenaAllocator.init(std.heap.page_allocator);
+    defer arena.deinit();
+    const alloc = arena.allocator();
+    const out = try ls1(alloc, path);
 
     // stout writer
     const stout_writer = std.io.getStdOut().writer();
     try stout_writer.print("{s}", .{out});
 }
 
-fn ls1(path: []const u8) ![]u8 {
-    // allocator
-    var arena = std.heap.ArenaAllocator.init(std.heap.page_allocator);
-    defer arena.deinit();
-    const alloc = arena.allocator();
-
+fn ls1(alloc: Allocator, path: []const u8) ![]u8 {
     // get stat file of path
     const cwd = std.fs.cwd();
     const stat = cwd.statFile(path) catch |err| switch (err) {
@@ -55,8 +53,6 @@ fn ls1(path: []const u8) ![]u8 {
             );
         },
     }
-
-    return try std.fmt.allocPrint(alloc, "\n", .{});
 }
 
 const ShowDirError = std.fs.Dir.RealPathAllocError || std.fmt.AllocPrintError;
@@ -71,7 +67,7 @@ fn showDir(alloc: Allocator, dir: std.fs.Dir) ShowDirError![]u8 {
 fn showFile(alloc: Allocator, basename: []const u8, _: std.fs.File) std.fmt.AllocPrintError![]u8 {
     return try std.fmt.allocPrint(
         alloc,
-        "file: {s}'\n",
+        "file: {s}\n",
         .{basename},
     );
 }
