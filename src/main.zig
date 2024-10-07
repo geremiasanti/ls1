@@ -1,5 +1,6 @@
 const std = @import("std");
 const Allocator = std.mem.Allocator;
+const expect = std.testing.expect;
 
 pub fn main() !void {
     // get first argument
@@ -55,11 +56,48 @@ fn ls1(alloc: Allocator, path: []const u8) ![]u8 {
     }
 }
 
+test "ls1 dir output" {
+    var arena = std.heap.ArenaAllocator.init(std.heap.page_allocator);
+    defer arena.deinit();
+    const alloc = arena.allocator();
+
+    const out = try ls1(alloc, ".");
+    try expect(std.mem.eql(u8, out, "dir: /home/geremia/dev/zig/ls1\n"));
+
+    const out1 = try ls1(alloc, "/home/geremia/dev/zig/ls1");
+    try expect(std.mem.eql(u8, out1, "dir: /home/geremia/dev/zig/ls1\n"));
+
+    const out2 = try ls1(alloc, "/home/geremia/dev/zig/ls1/");
+    try expect(std.mem.eql(u8, out2, "dir: /home/geremia/dev/zig/ls1\n"));
+}
+
+test "ls1 file output" {
+    var arena = std.heap.ArenaAllocator.init(std.heap.page_allocator);
+    defer arena.deinit();
+    const alloc = arena.allocator();
+
+    const out = try ls1(alloc, "src/main.zig");
+    try expect(std.mem.eql(u8, out, "file: main.zig\n"));
+
+    const out1 = try ls1(alloc, "./src/main.zig");
+    try expect(std.mem.eql(u8, out1, "file: main.zig\n"));
+
+    const out2 = try ls1(alloc, "/home/geremia/dev/zig/ls1/src/main.zig");
+    try expect(std.mem.eql(u8, out2, "file: main.zig\n"));
+}
+
+// TODO: implement
+//test "ls1 non-existent input file" {}
+//
+//test "ls1 non-existent input dir" {}
+//
+//test "ls1 null path arg" {}
+
 const ShowDirError = std.fs.Dir.RealPathAllocError || std.fmt.AllocPrintError;
 fn getDirOutput(alloc: Allocator, dir: std.fs.Dir) ShowDirError![]u8 {
     return try std.fmt.allocPrint(
         alloc,
-        "dir: {s}'\n",
+        "dir: {s}\n",
         .{try dir.realpathAlloc(alloc, ".")},
     );
 }
