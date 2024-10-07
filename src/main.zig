@@ -37,13 +37,13 @@ fn ls1(alloc: Allocator, path: []const u8) ![]u8 {
             var dir = try cwd.openDir(path, .{});
             defer dir.close();
 
-            return try showDir(alloc, dir);
+            return try getDirOutput(alloc, dir);
         },
         .file => {
             var file = try cwd.openFile(path, .{});
             defer file.close();
 
-            return try showFile(alloc, std.fs.path.basename(path), file);
+            return try getFileOutput(alloc, std.fs.path.basename(path), file);
         },
         else => {
             return try std.fmt.allocPrint(
@@ -56,7 +56,7 @@ fn ls1(alloc: Allocator, path: []const u8) ![]u8 {
 }
 
 const ShowDirError = std.fs.Dir.RealPathAllocError || std.fmt.AllocPrintError;
-fn showDir(alloc: Allocator, dir: std.fs.Dir) ShowDirError![]u8 {
+fn getDirOutput(alloc: Allocator, dir: std.fs.Dir) ShowDirError![]u8 {
     return try std.fmt.allocPrint(
         alloc,
         "dir: {s}'\n",
@@ -64,7 +64,7 @@ fn showDir(alloc: Allocator, dir: std.fs.Dir) ShowDirError![]u8 {
     );
 }
 
-fn showFile(alloc: Allocator, basename: []const u8, _: std.fs.File) std.fmt.AllocPrintError![]u8 {
+fn getFileOutput(alloc: Allocator, basename: []const u8, _: std.fs.File) std.fmt.AllocPrintError![]u8 {
     return try std.fmt.allocPrint(
         alloc,
         "file: {s}\n",
