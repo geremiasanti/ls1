@@ -3,23 +3,23 @@ const Allocator = std.mem.Allocator;
 const expect = std.testing.expect;
 
 pub fn main() !void {
-    // get first argument
-    var args = std.process.args();
-    _ = args.skip();
-    const path = args.next() orelse ".";
-
-    // program
+    // generate output
     var arena = std.heap.ArenaAllocator.init(std.heap.page_allocator);
     defer arena.deinit();
     const alloc = arena.allocator();
-    const out = try ls1(alloc, path);
+    var args = std.process.args();
+    _ = args.skip();
 
-    // stout writer
+    const out = try ls1(alloc, args.next());
+
+    // print to stout
     const stout_writer = std.io.getStdOut().writer();
     try stout_writer.print("{s}", .{out});
 }
 
-fn ls1(alloc: Allocator, path: []const u8) ![]u8 {
+fn ls1(alloc: Allocator, path_opt: ?([:0]const u8)) ![]u8 {
+    const path = path_opt orelse ".";
+
     // get stat file of path
     const cwd = std.fs.cwd();
     const stat = cwd.statFile(path) catch |err| switch (err) {
@@ -56,6 +56,16 @@ fn ls1(alloc: Allocator, path: []const u8) ![]u8 {
     }
 }
 
+test "ls1 null path input prints cwd" {
+    var arena = std.heap.ArenaAllocator.init(std.heap.page_allocator);
+    defer arena.deinit();
+    const alloc = arena.allocator();
+
+    const out = try ls1(alloc, null);
+    try expect(std.mem.eql(u8, out, "dir: /home/geremia/dev/zig/ls1\n"));
+    // TODO: make check on absolute path more general (e.g. without username)
+}
+
 test "ls1 dir output" {
     var arena = std.heap.ArenaAllocator.init(std.heap.page_allocator);
     defer arena.deinit();
@@ -67,8 +77,9 @@ test "ls1 dir output" {
     const out1 = try ls1(alloc, "/home/geremia/dev/zig/ls1");
     try expect(std.mem.eql(u8, out1, "dir: /home/geremia/dev/zig/ls1\n"));
 
-    const out2 = try ls1(alloc, "/home/geremia/dev/zig/ls1/");
-    try expect(std.mem.eql(u8, out2, "dir: /home/geremia/dev/zig/ls1\n"));
+    const out2 = try ls1(alloc, "./src");
+    try expect(std.mem.eql(u8, out2, "dir: /home/geremia/dev/zig/ls1/src\n"));
+    // TODO: make check on absolute path more general (e.g. without username)
 }
 
 test "ls1 file output" {
@@ -84,14 +95,28 @@ test "ls1 file output" {
 
     const out2 = try ls1(alloc, "/home/geremia/dev/zig/ls1/src/main.zig");
     try expect(std.mem.eql(u8, out2, "file: main.zig\n"));
+    // TODO: make check on absolute path more general (e.g. without username)
 }
 
-// TODO: implement
-//test "ls1 non-existent input file" {}
-//
-//test "ls1 non-existent input dir" {}
-//
-//test "ls1 null path arg" {}
+test "ls1 non-existent input file" {
+    var arena = std.heap.ArenaAllocator.init(std.heap.page_allocator);
+    defer arena.deinit();
+    const alloc = arena.allocator();
+
+    const out = try ls1(alloc, "src/main.zigg");
+    try expect(std.mem.indexOf(u8, out, "cannot access '") != null);
+    try expect(std.mem.indexOf(u8, out, "': No such file or directory\n") != null);
+}
+
+test "ls1 non-existent input dir" {
+    var arena = std.heap.ArenaAllocator.init(std.heap.page_allocator);
+    defer arena.deinit();
+    const alloc = arena.allocator();
+
+    const out = try ls1(alloc, "srcc/");
+    try expect(std.mem.indexOf(u8, out, "cannot access '") != null);
+    try expect(std.mem.indexOf(u8, out, "': No such file or directory\n") != null);
+}
 
 const ShowDirError = std.fs.Dir.RealPathAllocError || std.fmt.AllocPrintError;
 fn getDirOutput(alloc: Allocator, dir: std.fs.Dir) ShowDirError![]u8 {
