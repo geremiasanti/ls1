@@ -62,8 +62,8 @@ test "ls1 null path input prints cwd" {
     const alloc = arena.allocator();
 
     const out = try ls1(alloc, null);
-    try expect(std.mem.eql(u8, out, "dir: /home/geremia/dev/zig/ls1\n"));
-    // TODO: make check on absolute path more general (e.g. without username)
+    try expect(std.mem.indexOf(u8, out, "dir: /") != null);
+    try expect(std.mem.indexOf(u8, out, "\n") != null);
 }
 
 test "ls1 dir output" {
@@ -72,14 +72,12 @@ test "ls1 dir output" {
     const alloc = arena.allocator();
 
     const out = try ls1(alloc, ".");
-    try expect(std.mem.eql(u8, out, "dir: /home/geremia/dev/zig/ls1\n"));
+    try expect(std.mem.indexOf(u8, out, "dir: /") != null);
+    try expect(std.mem.indexOf(u8, out, "\n") != null);
 
-    const out1 = try ls1(alloc, "/home/geremia/dev/zig/ls1");
-    try expect(std.mem.eql(u8, out1, "dir: /home/geremia/dev/zig/ls1\n"));
-
-    const out2 = try ls1(alloc, "./src");
-    try expect(std.mem.eql(u8, out2, "dir: /home/geremia/dev/zig/ls1/src\n"));
-    // TODO: make check on absolute path more general (e.g. without username)
+    const out1 = try ls1(alloc, "./src");
+    try expect(std.mem.indexOf(u8, out1, "dir: /") != null);
+    try expect(std.mem.indexOf(u8, out1, "/src\n") != null);
 }
 
 test "ls1 file output" {
@@ -92,10 +90,6 @@ test "ls1 file output" {
 
     const out1 = try ls1(alloc, "./src/main.zig");
     try expect(std.mem.eql(u8, out1, "file: main.zig\n"));
-
-    const out2 = try ls1(alloc, "/home/geremia/dev/zig/ls1/src/main.zig");
-    try expect(std.mem.eql(u8, out2, "file: main.zig\n"));
-    // TODO: make check on absolute path more general (e.g. without username)
 }
 
 test "ls1 non-existent input file" {
