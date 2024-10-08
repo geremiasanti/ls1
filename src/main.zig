@@ -35,7 +35,7 @@ fn ls1(alloc: Allocator, path_opt: ?([:0]const u8)) ![]u8 {
     switch (stat.kind) {
         // TODO: close dir and file
         .directory => {
-            var dir = try cwd.openDir(path, .{});
+            var dir = try cwd.openDir(path, .{ .iterate = true });
             defer dir.close();
 
             return try getDirOutput(alloc, dir);
@@ -112,8 +112,14 @@ test "ls1 non-existent input dir" {
     try expect(std.mem.indexOf(u8, out, "': No such file or directory\n") != null);
 }
 
-const ShowDirError = std.fs.Dir.RealPathAllocError || std.fmt.AllocPrintError;
+const ShowDirError = std.fs.Dir.RealPathAllocError || std.fmt.AllocPrintError || std.fs.Dir.Iterator.Error;
 fn getDirOutput(alloc: Allocator, dir: std.fs.Dir) ShowDirError![]u8 {
+    var iterator = dir.iterate();
+
+    while (try iterator.next()) |entry| {
+        std.debug.print("{s}\n", .{@tagName(entry.kind)});
+    }
+
     return try std.fmt.allocPrint(
         alloc,
         "dir: {s}\n",
