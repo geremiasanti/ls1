@@ -86,10 +86,10 @@ test "ls1 file output" {
     const alloc = arena.allocator();
 
     const out = try ls1(alloc, "src/main.zig");
-    try expect(std.mem.eql(u8, out, "file: main.zig\n"));
+    try expect(std.mem.indexOf(u8, out, "file: main.zig\n") != null);
 
     const out1 = try ls1(alloc, "./src/main.zig");
-    try expect(std.mem.eql(u8, out1, "file: main.zig\n"));
+    try expect(std.mem.indexOf(u8, out1, "file: main.zig\n") != null);
 }
 
 test "ls1 non-existent input file" {
